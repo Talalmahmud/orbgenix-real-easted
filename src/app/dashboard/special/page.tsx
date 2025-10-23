@@ -51,32 +51,42 @@ export default function CategoryPage() {
       return;
     }
 
-    try {
-      const res = await api.post(
-        process.env.NEXT_PUBLIC_URL + "/agency/specializations/",
-        { name: name, description: description }
-      );
-      const resData = await res.data;
-      console.log(resData);
-      toast("Seciality added successfully");
+    if (editCategory) {
+      handleEdit();
+    } else {
+      try {
+        const res = await api.post(
+          process.env.NEXT_PUBLIC_URL + "/agency/specializations/",
+          { name: name, description: description }
+        );
+        const resData = await res.data;
+        console.log(resData);
+        toast("Seciality added successfully");
 
-      getSpecialities();
-      setOpen(false);
-      resetForm();
-    } catch (error) {
-      console.log(error);
+        getSpecialities();
+        setOpen(false);
+        resetForm();
+      } catch (error) {
+        console.log(error);
+      }
     }
   };
 
-  const handleEdit = async (cat: Category) => {
+  const selectData = async (cat: Category) => {
+    setOpen(true);
+
     setEditCategory(cat);
-    if (cat) {
-      setOpen(true);
-      setName(cat.name);
-      setDescription(cat.description);
+    setName(cat.name);
+    setDescription(cat.description);
+  };
+
+  const handleEdit = async () => {
+    if (editCategory) {
       try {
         const res = await api.patch(
-          process.env.NEXT_PUBLIC_URL + `/agency/specializations/${cat.id}/`
+          process.env.NEXT_PUBLIC_URL +
+            `/agency/specializations/${editCategory.id}/`,
+          { name: name, description: description }
         );
         const resData = await res.data;
         toast("Seciality updated successfully");
@@ -146,7 +156,7 @@ export default function CategoryPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleEdit(cat)}
+                      onClick={() => selectData(cat)}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>

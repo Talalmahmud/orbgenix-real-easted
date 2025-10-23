@@ -37,6 +37,11 @@ export default function Sidebar() {
     {
       title: "Users",
       icon: <Users className="w-5 h-5" />,
+      href: "/dashboard/users",
+    },
+    {
+      title: "Users",
+      icon: <Users className="w-5 h-5" />,
       sublinks: [
         {
           name: "Agency",
@@ -50,6 +55,7 @@ export default function Sidebar() {
         },
       ],
     },
+
     {
       title: "Specializations",
       icon: <Settings className="w-5 h-5" />,

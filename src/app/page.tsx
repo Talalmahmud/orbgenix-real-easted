@@ -75,7 +75,7 @@ export default function LoginPage() {
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
                   id="email"
-                  type="email"
+                  type="text"
                   placeholder="Enter your email"
                   value={username}
                   onChange={(e) => setUserName(e.target.value)}
