@@ -127,7 +127,7 @@ export default function UserTable() {
                   <TableCell>{u.username}</TableCell>
                   <TableCell>{u.phone_number}</TableCell>
                   <TableCell className="capitalize">{u.role}</TableCell>
-                  <TableCell className="text-center">
+                  <TableCell className="">
                     {u.is_verified ? "✅" : "❌"}
                   </TableCell>
                   <TableCell className="text-center space-x-2">

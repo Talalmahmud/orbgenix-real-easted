@@ -2,7 +2,13 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +16,13 @@ import { Switch } from "@/components/ui/switch";
 import { useEffect } from "react";
 
 import { z } from "zod";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 export const userSchema = z.object({
   username: z.string("Invalid email"),
@@ -33,7 +46,6 @@ export const userSchema = z.object({
 
 export type UserFormValues = z.infer<typeof userSchema>;
 
-
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -41,7 +53,12 @@ type Props = {
   initialData?: UserFormValues | null;
 };
 
-export default function UserFormModal({ open, onClose, onSubmit, initialData }: Props) {
+export default function UserFormModal({
+  open,
+  onClose,
+  onSubmit,
+  initialData,
+}: Props) {
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
     defaultValues: initialData || {
@@ -81,7 +98,10 @@ export default function UserFormModal({ open, onClose, onSubmit, initialData }: 
         <DialogHeader>
           <DialogTitle>{initialData ? "Edit User" : "Create User"}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto">
+        <form
+          onSubmit={form.handleSubmit(handleSubmit)}
+          className="space-y-4 max-h-[70vh] overflow-y-auto"
+        >
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Username (Email)</Label>
@@ -97,11 +117,31 @@ export default function UserFormModal({ open, onClose, onSubmit, initialData }: 
             </div>
             <div>
               <Label>Role</Label>
-              <Input type="number" {...form.register("role", { valueAsNumber: true })} />
+              <Select
+                onValueChange={(value) =>
+                  form.setValue("role", parseInt(value))
+                }
+                value={form.watch("role")?.toString() || ""}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Admin</SelectItem>
+                  <SelectItem value="1">Buyer</SelectItem>
+                  <SelectItem value="2">Seller</SelectItem>
+                  <SelectItem value="3">Agent</SelectItem>
+                  <SelectItem value="4">Agency</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+
             <div className="flex items-center gap-2">
               <Label>Verified</Label>
-              <Switch checked={form.watch("is_verified")} onCheckedChange={(v) => form.setValue("is_verified", v)} />
+              <Switch
+                checked={form.watch("is_verified")}
+                onCheckedChange={(v) => form.setValue("is_verified", v)}
+              />
             </div>
           </div>
 
@@ -110,15 +150,39 @@ export default function UserFormModal({ open, onClose, onSubmit, initialData }: 
 
           <div className="grid grid-cols-2 gap-4">
             <Input placeholder="Gender" {...form.register("profile.gender")} />
-            <Input placeholder="Address" {...form.register("profile.address")} />
+            <Input
+              placeholder="Address"
+              {...form.register("profile.address")}
+            />
             <Input placeholder="City" {...form.register("profile.city")} />
-            <Input placeholder="Country" {...form.register("profile.country")} />
-            <Input placeholder="Postal Code" {...form.register("profile.postal_code")} />
-            <Input placeholder="Website" {...form.register("profile.website")} />
-            <Input placeholder="LinkedIn" {...form.register("profile.linkedin")} />
-            <Input placeholder="Facebook" {...form.register("profile.facebook")} />
-            <Input placeholder="Twitter" {...form.register("profile.twitter")} />
-            <Input placeholder="Instagram" {...form.register("profile.instagram")} />
+            <Input
+              placeholder="Country"
+              {...form.register("profile.country")}
+            />
+            <Input
+              placeholder="Postal Code"
+              {...form.register("profile.postal_code")}
+            />
+            <Input
+              placeholder="Website"
+              {...form.register("profile.website")}
+            />
+            <Input
+              placeholder="LinkedIn"
+              {...form.register("profile.linkedin")}
+            />
+            <Input
+              placeholder="Facebook"
+              {...form.register("profile.facebook")}
+            />
+            <Input
+              placeholder="Twitter"
+              {...form.register("profile.twitter")}
+            />
+            <Input
+              placeholder="Instagram"
+              {...form.register("profile.instagram")}
+            />
           </div>
 
           <DialogFooter>

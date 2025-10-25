@@ -1,6 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -9,296 +25,292 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Edit, Trash2, Plus } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
-import { MultiSelect } from "@/components/ui/multi-select"; // if you have a multi-select, else replace with select
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import api from "@/helpers/axios";
+import { toast } from "sonner";
 
 interface Agency {
-  id: number;
+  id?: number;
   user: number;
-  agency: number;
+  name: string;
   license_number: string;
-  experience_years: number;
-  specializations: string[];
+  address: string;
+  phone: string;
+  website: string;
 }
 
-interface Specialization {
+interface User {
   id: number;
-  name: string;
+  username: string;
 }
 
 export default function AgencyPage() {
   const [agencies, setAgencies] = useState<Agency[]>([]);
-  const [specializations, setSpecializations] = useState<Specialization[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [editAgency, setEditAgency] = useState<Agency | null>(null);
-  const [form, setForm] = useState({
-    user: "",
-    agency: "",
+  const [users, setUsers] = useState<User[]>([]);
+  const [formData, setFormData] = useState<Agency>({
+    user: 0,
+    name: "",
     license_number: "",
-    experience_years: "",
-    specializations: [] as string[],
+    address: "",
+    phone: "",
+    website: "",
   });
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [editId, setEditId] = useState<number | null>(null);
 
-  // ✅ Fetch all agencies
+  // Fetch agencies
   const fetchAgencies = async () => {
     try {
-      setLoading(true);
-      const { data } = await api.get(
-        process.env.NEXT_PUBLIC_URL + "/agency/agencies/"
-      );
+      const { data } = await api.get("/agency/agencies");
       setAgencies(data.results);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load agencies");
-    } finally {
-      setLoading(false);
+    } catch {
+      toast("Failed to fetch agencies");
     }
   };
 
-  // ✅ Fetch all specializations
-  const fetchSpecializations = async () => {
+  // Fetch users for dropdown
+  const fetchUsers = async (role: number) => {
     try {
-      const { data } = await api.get(
-        process.env.NEXT_PUBLIC_URL + "/agency/specializations/"
-      );
-      setSpecializations(data.results);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load specializations");
+      const { data } = await api.get("/users/user/?role=" + role);
+      setUsers(data.results);
+    } catch {
+      toast("Failed to fetch users");
     }
   };
 
   useEffect(() => {
     fetchAgencies();
-    fetchSpecializations();
   }, []);
 
-  // ✅ Handle input
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (field: keyof Agency, value: string | number) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // ✅ Create or Update agency
   const handleSubmit = async () => {
-    try {
-      const payload = {
-        user: Number(form.user),
-        agency: Number(form.agency),
-        license_number: form.license_number,
-        experience_years: Number(form.experience_years),
-        specializations: form.specializations,
-      };
+    if (!formData.name || !formData.user) {
+      toast("Please fill required fields");
+      return;
+    }
 
-      if (editAgency) {
-        await api.put(
-          `${process.env.NEXT_PUBLIC_URL}/agency/agencies/${editAgency.id}`,
-          payload
-        );
-        toast.success("Agency updated successfully");
+    setLoading(true);
+    try {
+      if (editId) {
+        await api.put(`/agency/agencies/${editId}`, formData);
+        toast("Agency updated successfully");
       } else {
-        await api.post(
-          process.env.NEXT_PUBLIC_URL + "/agency/agencies/",
-          payload
-        );
-        toast.success("Agency created successfully");
+        await api.post("/agency/agencies", formData);
+        toast("Agency created successfully");
       }
-
-      await fetchAgencies();
       setOpen(false);
-      setEditAgency(null);
-      setForm({
-        user: "",
-        agency: "",
+      setFormData({
+        user: 0,
+        name: "",
         license_number: "",
-        experience_years: "",
-        specializations: [],
+        address: "",
+        phone: "",
+        website: "",
       });
-    } catch (err) {
-      console.error(err);
-      toast.error("Error saving agency");
+      setEditId(null);
+      fetchAgencies();
+    } catch {
+      toast("Failed to save agency");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // ✅ Delete agency
-  const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this agency?")) return;
-    try {
-      await api.delete(`${process.env.NEXT_PUBLIC_URL}/agency/agencies/${id}`);
-      toast.success("Agency deleted");
-      await fetchAgencies();
-    } catch (err) {
-      console.error(err);
-      toast.error("Error deleting agency");
-    }
-  };
-
-  // ✅ Edit mode
   const handleEdit = (agency: Agency) => {
-    setEditAgency(agency);
-    setForm({
-      user: String(agency.user),
-      agency: String(agency.agency),
-      license_number: agency.license_number,
-      experience_years: String(agency.experience_years),
-      specializations: agency.specializations,
-    });
+    setFormData(agency);
+    setEditId(agency.id!);
     setOpen(true);
   };
 
+  const handleDelete = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this agency?")) return;
+    try {
+      await api.delete(`/agency/agencies/${id}`);
+      toast("Agency deleted");
+      fetchAgencies();
+    } catch {
+      toast("Failed to delete agency");
+    }
+  };
+
   return (
-    <div className="p-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold">Agency Management</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditAgency(null)}>
-              <Plus className="mr-2 h-4 w-4" /> Add Agency
-            </Button>
-          </DialogTrigger>
-
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>
-                {editAgency ? "Edit Agency" : "Add New Agency"}
-              </DialogTitle>
-            </DialogHeader>
-
-            {/* Form */}
-            <div className="space-y-3 py-2">
-              <div>
-                <Label>User ID</Label>
-                <Input name="user" value={form.user} onChange={handleChange} />
-              </div>
-              <div>
-                <Label>Agency ID</Label>
-                <Input
-                  name="agency"
-                  value={form.agency}
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <Label>License Number</Label>
-                <Input
-                  name="license_number"
-                  value={form.license_number}
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <Label>Experience (Years)</Label>
-                <Input
-                  name="experience_years"
-                  type="number"
-                  min="0"
-                  value={form.experience_years}
-                  onChange={handleChange}
-                />
-              </div>
-
-              {/* ✅ Multi-select for Specializations */}
-              <div>
-                <Label>Specializations</Label>
-                <MultiSelect
-                  options={specializations.map((s) => ({
-                    label: s.name,
-                    value: s.name,
-                  }))}
-                  value={form.specializations}
-                  onValueChange={(values) =>
-                    setForm({ ...form, specializations: values })
-                  }
-                  placeholder="Select specializations..."
-                />
-              </div>
-
-              <Button className="w-full mt-2" onClick={handleSubmit}>
-                {editAgency ? "Update" : "Create"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Table */}
-      <div className="rounded-xl border">
-        <Table className="min-w-[800px]">
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>User</TableHead>
-              <TableHead>Agency</TableHead>
-              <TableHead>License</TableHead>
-              <TableHead>Experience</TableHead>
-              <TableHead>Specializations</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-4">
-                  Loading...
-                </TableCell>
-              </TableRow>
-            ) : agencies.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-4">
-                  No agencies found
-                </TableCell>
-              </TableRow>
-            ) : (
-              agencies?.map((agency) => (
-                <TableRow key={agency.id}>
-                  <TableCell>{agency.id}</TableCell>
-                  <TableCell>{agency.user}</TableCell>
-                  <TableCell>{agency.agency}</TableCell>
-                  <TableCell>{agency.license_number}</TableCell>
-                  <TableCell>{agency.experience_years} yrs</TableCell>
-                  <TableCell className="space-x-1">
-                    {agency.specializations.map((s, idx) => (
-                      <Badge key={idx} variant="outline">
-                        {s}
-                      </Badge>
-                    ))}
-                  </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEdit(agency)}
+    <div className="p-6">
+      <Card>
+        <CardHeader className="flex flex-row justify-between items-center">
+          <div>
+            <CardTitle>Agencies</CardTitle>
+            <CardDescription>Manage real estate agencies</CardDescription>
+          </div>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button>Add Agency</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {editId ? "Edit Agency" : "Add Agency"}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                <div className=" flex items-center gap-2">
+                  {" "}
+                  <div>
+                    <Label>Role</Label>
+                    <Select
+                      onValueChange={(value) => {
+                        fetchUsers(Number(value));
+                      }}
                     >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(agency.id)}
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">Admin</SelectItem>
+                        <SelectItem value="1">Buyer</SelectItem>
+                        <SelectItem value="2">Seller</SelectItem>
+                        <SelectItem value="3">Agent</SelectItem>
+                        <SelectItem value="4">Agency</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>User</Label>
+                    <Select
+                      value={formData.user ? formData.user.toString() : ""}
+                      onValueChange={(value) =>
+                        handleChange("user", parseInt(value))
+                      }
                     >
-                      <Trash2 className="w-4 h-4 text-red-600" />
-                    </Button>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select user" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {users.map((u) => (
+                          <SelectItem key={u.id} value={u.id.toString()}>
+                            {u?.username}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <Label>Agency Name</Label>
+                  <Input
+                    value={formData.name}
+                    onChange={(e) => handleChange("name", e.target.value)}
+                    placeholder="Sunrise Realty"
+                  />
+                </div>
+                <div>
+                  <Label>License Number</Label>
+                  <Input
+                    value={formData.license_number}
+                    onChange={(e) =>
+                      handleChange("license_number", e.target.value)
+                    }
+                    placeholder="AGY-123456"
+                  />
+                </div>
+                <div>
+                  <Label>Address</Label>
+                  <Input
+                    value={formData.address}
+                    onChange={(e) => handleChange("address", e.target.value)}
+                    placeholder="123 Main Street, Dhaka"
+                  />
+                </div>
+                <div>
+                  <Label>Phone</Label>
+                  <Input
+                    value={formData.phone}
+                    onChange={(e) => handleChange("phone", e.target.value)}
+                    placeholder="+8801712345678"
+                  />
+                </div>
+                <div>
+                  <Label>Website</Label>
+                  <Input
+                    value={formData.website}
+                    onChange={(e) => handleChange("website", e.target.value)}
+                    placeholder="https://www.sunriserealty.com"
+                  />
+                </div>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="w-full"
+                >
+                  {loading ? "Saving..." : editId ? "Update" : "Create"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </CardHeader>
+
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>#</TableHead>
+                <TableHead>User</TableHead>
+                <TableHead>Agency Name</TableHead>
+                <TableHead>Phone</TableHead>
+                <TableHead>Website</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {agencies.length > 0 ? (
+                agencies.map((agency, i) => (
+                  <TableRow key={agency.id}>
+                    <TableCell>{i + 1}</TableCell>
+                    <TableCell>
+                      {}
+                    </TableCell>
+                    <TableCell>{agency.name}</TableCell>
+                    <TableCell>{agency.phone}</TableCell>
+                    <TableCell>{agency.website}</TableCell>
+                    <TableCell className="text-right space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(agency)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(agency.id!)}
+                      >
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center">
+                    No agencies found
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

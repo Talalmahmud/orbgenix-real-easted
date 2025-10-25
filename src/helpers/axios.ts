@@ -3,7 +3,7 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 import { getCookie } from "cookies-next";
 
 const api: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BASE_URL, // Set your API base URL
+  baseURL: process.env.NEXT_PUBLIC_URL, // Set your API base URL
 });
 
 // Request interceptor to add the Bearer token
